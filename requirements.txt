@@ -1,1 +1,1 @@
-bibtexparser
+pyobjc-framework-Quartz

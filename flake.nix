@@ -32,14 +32,16 @@
             program = "${exec}/bin/${name}";
           };
 
+          pyscript = "${self}/splitPDF.py";
+
         in with pkgs;
           {
             ###################################################################
             #                       running                                   #
             ###################################################################
             apps = {
-              default = simple_script "pdf_split" [] ''
-                python splitPDF.py "''$@"
+              default = simple_script "pyscript" [] ''
+                python ${pyscript} "''$@"
               '';
             };
 

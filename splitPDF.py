@@ -10,10 +10,9 @@ __author__ = 'benhdj@cs.cmu.edu (Benjamin Han)'
 import sys
 import os
 
-from Quartz import *
+from Quartz import CGPDFContextCreateWithFilename, CGPDFDocumentCreateWithProvider, CGDataProviderCreateWithFilename, CGRectMake
 
-
-def Usage ():
+def Usage():
   print("""
 Usage: splitPDF.py inputFN splitPageNum1 splitPageNum2 ...
 
@@ -53,7 +52,7 @@ else:
     sys.exit(2)
 
   try:
-    splitPageNums = map(int,  sys.argv[2:])
+    splitPageNums = list(map(int,  sys.argv[2:]))
   except:
     print('Error: invalid split page number(s).')
 
@@ -81,7 +80,7 @@ for i, splitPageNum in enumerate(splitPageNums):
   print('Writing page %d-%d to %s...' % \
         (startPageNum, splitPageNum, outputFN))
 
-  for pageNum in xrange(startPageNum, splitPageNum + 1):
+  for pageNum in range(startPageNum, splitPageNum + 1):
     mediaBox = inputDoc.getMediaBox(pageNum)
     writeContext.beginPage(mediaBox)
     writeContext.drawPDFDocument(mediaBox, inputDoc, pageNum)

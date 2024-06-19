@@ -19,10 +19,15 @@
           
           # python environment
           mypython = 
-              mach-nix.lib."${system}".mkPython {
-                requirements = builtins.readFile requirements-txt;
-                python = "python310";
-              };
+            mach-nix.lib."${system}".mkPython {
+              requirements = builtins.readFile requirements-txt;
+              python = "python310";
+            };
+
+          mydevpython =
+            mach-nix.lib."${system}".mkPython {
+              requirements = requirements-as-text +  "\npip";
+            };
           
           # Utility to run a script easily in the flakes app
           simple_script = name: add_deps: text: let
@@ -81,17 +86,18 @@
               {
                 buildInputs = [
                   pkgs.charasay
-                  mypython
+                  mydevpython
                 ];
-                runtimeInputs = [ mypython ];
+                runtimeInputs = [ mydevpython ];
                 shellHook = ''
-                  echo "Using virtual environment with Python:
+                  alias pip="${mydevpython}/bin/pip --disable-pip-version-check"
+                  echo "Using virtual environment for ${script-name} with Python
 
 $(python --version)
 
 with packages
 
-${requirements-as-text}" | chara say -f null.chara
+$(${mydevpython}/bin/pip list --no-color --disable-pip-version-check)" | chara say -f null.chara
                 '';
               };
           }

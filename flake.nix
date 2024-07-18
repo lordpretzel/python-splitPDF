@@ -16,17 +16,28 @@
 
           requirements-txt = "${self}/requirements.txt";
           requirements-as-text = builtins.readFile requirements-txt;
+
+          development-requirements-as-text = requirements-as-text +
+                                             ''
+pip
+python-lsp-server[all]
+rich-cli
+mypy
+'';
+
+          python = "python310";
           
           # python environment
           mypython = 
             mach-nix.lib."${system}".mkPython {
-              requirements = builtins.readFile requirements-txt;
-              python = "python310";
+              inherit python;
+              requirements = requirements-as-text;
             };
 
           mydevpython =
             mach-nix.lib."${system}".mkPython {
-              requirements = requirements-as-text +  "\npip";
+              inherit python;
+              requirements = development-requirements-as-text;
             };
           
           # Utility to run a script easily in the flakes app
@@ -85,19 +96,18 @@
             devShells.default = mkShell
               {
                 buildInputs = [
-                  pkgs.charasay
                   mydevpython
                 ];
                 runtimeInputs = [ mydevpython ];
                 shellHook = ''
                   alias pip="${mydevpython}/bin/pip --disable-pip-version-check"
-                  echo "Using virtual environment for ${script-name} with Python
+                  rich "[b white on black]Using virtual environment for [/][b white on red] ${package-name} [/][b white on black] with Python[/]
 
-$(python --version)
+[b]$(python --version)[/]
 
-with packages
+[b white on black]with packages[/]
 
-$(${mydevpython}/bin/pip list --no-color --disable-pip-version-check)" | chara say -f null.chara
+$(${mydevpython}/bin/pip list --no-color --disable-pip-version-check)" --print --padding 1 -p -a heavy
                 '';
               };
           }

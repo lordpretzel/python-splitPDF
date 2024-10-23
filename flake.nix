@@ -15,38 +15,44 @@
           };
 
           requirements-txt = "${self}/requirements.txt";
-          requirements-as-text = builtins.readFile requirements-txt;
+          requirements-as-text = "";
 
-          development-requirements-as-text = requirements-as-text +
-                                             ''
+          development-requirements-as-text = ''
 pip
 python-lsp-server[all]
 rich-cli
 mypy
-'';
+''
+            ;
+
+          extrapackages = with pkgs; [
+            pdftk
+          ];
 
           python = "python310";
-          
+
           # python environment
-          mypython = 
+          mypython =
             mach-nix.lib."${system}".mkPython {
               inherit python;
               requirements = requirements-as-text;
             };
+
+          deps = [ mypython ] ++ extrapackages;
 
           mydevpython =
             mach-nix.lib."${system}".mkPython {
               inherit python;
               requirements = development-requirements-as-text;
             };
-          
+
+          devdeps = [ mydevpython ] ++ extrapackages;
+
           # Utility to run a script easily in the flakes app
           simple_script = name: add_deps: text: let
             exec = pkgs.writeShellApplication {
               inherit name text;
-              runtimeInputs = with pkgs; [
-                mypython
-              ] ++ add_deps;
+              runtimeInputs = deps ++ add_deps;
             };
           in {
             type = "app";
@@ -58,7 +64,7 @@ mypy
           pyscript = "${self}/${script-name}";
           package-version = "1.0";
           package-name = "${script-base-name}-${package-version}";
-          
+
         in with pkgs;
           {
             ###################################################################
@@ -68,19 +74,19 @@ mypy
               splitPDF = stdenv.mkDerivation {
                 name="${package-name}";
                 src = ./.;
-                
-                runtimeInputs = [ mypython ];
-                buildInputs = [ mypython ];
+
+                runtimeInputs = deps;
+                buildInputs = deps;
                 nativeBuildInputs = [ makeWrapper ];
                 installPhase = ''
                   mkdir -p $out/bin/
                   mkdir -p $out/share/
                   cp ${pyscript} $out/share/${script-name}
-                  makeWrapper ${mypython}/bin/python $out/bin/${script-base-name} --add-flags "$out/share/${script-name}" 
-                '';                
+                  makeWrapper ${mypython}/bin/python $out/bin/${script-base-name} --add-flags "$out/share/${script-name}"
+                '';
               };
             };
-            
+
             ###################################################################
             #                       running                                   #
             ###################################################################
@@ -95,10 +101,8 @@ mypy
             ###################################################################
             devShells.default = mkShell
               {
-                buildInputs = [
-                  mydevpython
-                ];
-                runtimeInputs = [ mydevpython ];
+                buildInputs = devdeps;
+                runtimeInputs = devdeps;
                 shellHook = ''
                   alias pip="${mydevpython}/bin/pip --disable-pip-version-check"
                   rich "[b white on black]Using virtual environment for [/][b white on red] ${package-name} [/][b white on black] with Python[/]

@@ -1,6 +1,3 @@
-#!/usr/bin/env -S nix develop . --command python
-
-
 import sys
 import os
 import subprocess
